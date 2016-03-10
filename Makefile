@@ -2,6 +2,8 @@ DMS_DEV = dms_dev
 SRC = src
 OBJ = obj
 
+$(shell mkdir obj)
+
 CC = /opt/buildroot-gcc463/usr/bin/mipsel-buildroot-linux-uclibc-gcc
 #CC = gcc
 LDFLAGS = -I./$(SRC)

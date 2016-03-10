@@ -117,3 +117,5 @@ void inline UTILS_LOG(const char *tag, LOG_LEVEL level, const char* fun, const i
 }
 
 #endif // _ZIGBEE_SDK_UTILS_H_
+
+
