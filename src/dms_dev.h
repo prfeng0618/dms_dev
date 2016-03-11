@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "list.h"
 #include "cJSON.h"
+#include "dms_manage_wifi.h"
 
 enum CmdKey {
 	INVALID = 0,
@@ -100,6 +101,11 @@ typedef struct _RT_802_11_MAC_TABLE {
 #define MODULE_WIFI "wifi"
 #define MODULE_ZIGBEE "zigbee"
 
+
+#define SIOCDEVPRIVATE              0x8BE0
+#define SIOCIWFIRSTPRIV             SIOCDEVPRIVATE
+#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT   (SIOCIWFIRSTPRIV + 0x1F)
+
 struct wifista_record {
 	unsigned char  wmac[ETH_ALEN]; //wifi sta mac地址
 	unsigned int	mark;	//标记为1，存在无线客户端列表中。标记为0，不存在，删除该记录
@@ -122,5 +128,9 @@ struct auth_proto {
 	char* module;	//wifi\zigbee
 	char* info;     //mac addr\device id
 };
+
+
+void auth_thread(void *data);
+struct auth_proto* alloc_auth_proto(char* type,char* subtype,char* module,unsigned char* id);
 
 #endif /* _DMS_DEV_H_ */

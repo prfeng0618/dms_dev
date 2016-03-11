@@ -22,7 +22,7 @@ LINKCC = $(CXX) $(LDFLAGS)
 LIBA = 
 
 #CSRCS := $(wildcard *.c)     
-CSRCS := dms_dev.c debug.c cJSON.c   
+CSRCS := dms_dev.c debug.c cJSON.c thread.c dms_manage_wifi.c 
 COBJS := $(patsubst %.c,%.o,$(CSRCS))  
 #CXXSRCS := $(wildcard *.cpp)  
 CXXSRCS := dms_zigbee.cpp

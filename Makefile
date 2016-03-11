@@ -26,7 +26,7 @@ LINKCC = $(CXX) $(LDFLAGS)
 LIBA = 
 
 #CSRCS := $(wildcard *.c)     
-CSRCS := $(SRC)/dms_dev.c $(SRC)/debug.c $(SRC)/cJSON.c   
+CSRCS := $(SRC)/dms_dev.c $(SRC)/debug.c $(SRC)/cJSON.c $(SRC)/thread.c $(SRC)/dms_manage_wifi.c $(SRC)/dms_manage_zigbee.c
 COBJS := $(patsubst $(SRC)/%.c,$(OBJ)/%.o,$(CSRCS))  
 #CXXSRCS := $(wildcard *.cpp)  
 CXXSRCS := $(SRC)/dms_zigbee.cpp
@@ -55,6 +55,7 @@ $(DMS_DEV): $(COBJS) $(CXXOBJS)
 .PHONY: clean backup git
 clean: 
 	rm -f $(COBJS) $(CXXOBJS) $(DMS_DEV)  
+	rm -rf obj
 
 HFILE := cJSON.h debug.h dms_dev.h dms_zigbee.h InnerClient.h list.h utils.h wireless.h
 backup:
