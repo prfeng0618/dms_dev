@@ -1,6 +1,5 @@
 #include "dms_dev.h"
 
-
 extern pthread_mutex_t wifista_table_mutex;
 extern struct globals G;
 extern struct list_head head_wifista;

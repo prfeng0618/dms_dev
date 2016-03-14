@@ -54,7 +54,6 @@ static int add_zigbeesta_table(char *sHigh, char *sLow)
 	zitem->zigbeestate= ZIG_INIT;
 	list_add_tail(&zitem->list, &head_zigbeesta);
 	zitem->zigbeestate= ZIG_COMING;
-
 }
 
 static int del_zigbeesta_table(struct zigbeesta_record *record)
@@ -596,7 +595,6 @@ int process_zigbeesta()
 
 			/* 将新终端从zigbee table中删除 */
 			del_zigbeesta_table(pos_item);
-			
 #endif
 		}
 	}

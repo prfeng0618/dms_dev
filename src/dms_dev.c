@@ -34,17 +34,6 @@ pthread_mutex_t zigbeesta_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define BACKLOG 5     // how many pending connections queue will hold
 #define BUF_SIZE 1024
 
-
-
-void auth_thread(void *data);
-static void zigbee_turnon(char *zigbee_id);
-static void zigbee_turnoff(char *zigbee_id);
-static void send_zigbeesta_onlinemsg(char* sHigh,char* sLow);
-static void send_zigbeesta_offlinemsg(char* sHigh,char* sLow);
-
-
-
-
 static int init_resource(){	
 	G.cmdkey = INVALID;
 	G.dmspath = strdup(DMS_UNIX_DOMAIN);
@@ -497,165 +486,6 @@ static int debug_zigbeesta()
 	return 0;
 }
 
-#if 0
-static int process_zigbeesta()
-{
-	int i=0, ret;
-	int exist_dev;
-	struct zigbeesta_record *pos_item = NULL;
-	struct zigbeesta_record *pos_next_item = NULL;
-	pthread_t pth_ids;
-	struct auth_proto *ppro;
-	char *p;
-	
-	/* send permit join msg */
-	zigbee_send_permit();
-
-#if 1
-	/* 在zigbee设备队列的mark置为0，重新判断是否这些设备还在线  */
-	clear_zigbee_mark();
-	
-	char strBuf[256]={0};
-	cJSON *pJson;	
-	cJSON *pZigStaJson;
-
-#if 1
-	char *response;
-	sprintf(strBuf,"\{\"cmd_url\":\"/zigbeeservice/node\", \"cmd_name\":\"enum\", \"category\":0\}");
-    response = requestHandler(strBuf);
-#else
-    char response[2048] = "{ \n\
-        \"cmd_url\":      \"/zigbeeservice/node\", \n\
-        \"cmd_name\":     \"enum\",\n\
-        \"result\":       0,\n\
-        \"extra\":        {\n\
-                \"value\":        [{\n\
-                                \"index\":        -1,\n\
-                                \"ieeeaddr\":     [-1624499832, 5260233],\n\
-                                \"shortaddr\":    720,\n\
-                                \"status\":       2,\n\
-                                \"category\":     1,\n\
-                                \"subcategory\":  15,\n\
-                                \"alias\":        \"Unknown\",\n\
-                                \"description\":  \"ct_color_light\",\n\
-                                \"version\":      \"0.0.0.0\"\n\
-                        }, {\n\
-                                \"index\":        -1,\n\
-                                \"ieeeaddr\":     [-1624499832, 5260233],\n\
-                                \"shortaddr\":    720,\n\
-                                \"status\":       2,\n\
-                                \"category\":     1,\n\
-                                \"subcategory\":  15,\n\
-                                \"alias\":        \"Unknown\",\n\
-                                \"description\":  \"ct_color_light\",\n\
-                                \"version\":      \"0.0.0.0\"\n\
-                        }]\n\
-        }\n\
-}";
-
-	printf(" response = %s \n",response);
-#endif
-	pJson = cJSON_Parse(response);
-	free(response);
-	pZigStaJson = get_zigbeesta_jsonarray(pJson);
-	
-	if (pZigStaJson)
-	{
-		int iSize = cJSON_GetArraySize(pZigStaJson);
-		int iCnt = 0;
-		/* 轮询从zigbee server上获取的节点信息 */
-		for(iCnt = 0; iCnt < iSize; iCnt++)
-		{
-			char sHigh[16] = {0};
-			char sLow[16] = {0};
-			exist_dev = 0;
-			cJSON * pNodeSub = cJSON_GetArrayItem(pZigStaJson, iCnt);
-			if(NULL == pNodeSub)
-			{
-				continue;
-			}
-			
-			cJSON *pIeeeaddrSub = cJSON_GetObjectItem(pNodeSub, "ieeeaddr");
-			p = cJSON_Print(pIeeeaddrSub);
-			sscanf(p,"[%[^,], %[^]]",sHigh,sLow);
-			free(p);
-			
-			/* 从zigbee server获取的节点是否在zigbee table中 ， 存在的话则mark置为1 */
-			exist_dev = zigbeesta_in_table(sHigh, sLow);
-			
-			/* 得到是新节点，则加入到zigbee table中 */
-			if (!exist_dev) {
-				char zigbee_id[32];
-				void *status;
-				
-				/* 将新终端加入到zigbee table中 */
-				add_zigbeesta_table(sHigh,sLow);			
-#if 0				
-				//新终端上线进，发送消息至dms server进行认证工作
-				debug(LOG_ERR, "%s : create new thread , one zigbee sta(%s-%s) join ",__FUNCTION__,sHigh,sLow);
-				sprintf(zigbee_id,"%s+%s",sHigh,sLow);
-				ppro = alloc_auth_proto(TYPE_INFORM,SUBTYPE_ONLINE,MODULE_ZIGBEE,(unsigned char *)zigbee_id);
-				ret=pthread_create(&pth_ids,NULL,(void *)auth_thread,(void *)ppro);
-				if(ret!=0)
-				{
-					printf ("Create pthread error!\n");
-					exit(1);
-				}
-				pthread_detach(pth_ids);
-#endif
-			}		
-		} 
-	}
-	cJSON_Delete(pJson);
-
-	/* BUG: 智能灯加入zigbee server中后会行程一个节点，但无论智能灯上下电，这个节点状态一直都是online，因此我们必须对灯进行配置，如果result返回非0，表示灯未插上 */
-	check_zigbeesta_status();
-
-	/* zigbee table中已下线设备做下线处理 */
-	pthread_mutex_lock(&zigbeesta_table_mutex);
-	list_for_each_entry_safe(pos_item, pos_next_item, &head_zigbeesta, list){
-		if ( pos_item->mark == 0 ) {
-#if 0
-			char zigbee_id[32];
-			pthread_t pid_temp;
-			struct auth_proto *pProto;
-			char sHigh[16] = {0};
-			char sLow[16] = {0};
-						
-			strncpy(sHigh,pos_item->ieeeaddr_high,strlen(pos_item->ieeeaddr_high));
-			strncpy(sLow,pos_item->ieeeaddr_low,strlen(pos_item->ieeeaddr_low));
-	
-			/* 将新终端加入到zigbee table中 */	
-			del_zigbeesta_table(pos_item);
-
-			/* 通知dms server节点下线消息 */
-			debug(LOG_ERR, "%s : create new thread, one zigbee sta(%s+%s) leaving ",__FUNCTION__,sHigh,sLow);
-			sprintf(zigbee_id,"%s+%s",sHigh,sLow);
-			pProto = alloc_auth_proto(TYPE_INFORM,SUBTYPE_OFFLINE,MODULE_ZIGBEE,zigbee_id);
-			ret=pthread_create(&pid_temp,NULL,(void *)auth_thread,(void *)pProto);
-			if(ret!=0)
-			{
-				printf ("Create pthread error!\n");
-				exit(1);
-			}
-			pthread_detach(pid_temp);
-			
-			/* 从zigbee server中删除节点信息 */
-			deal_zigbee_illegality(zigbee_id);
-#else
-
-			/* 将新终端从zigbee table中删除 */
-			del_zigbeesta_table(pos_item);
-			
-#endif
-		}
-	}
-	pthread_mutex_unlock(&zigbeesta_table_mutex);
-#endif
-	dump_zigbeesta();
-	return 0;
-}
-#endif
 
 void thread_controlcrond(void *arg)
 {
@@ -875,28 +705,10 @@ static int do_process()
 	int ret;
 	void *status;
 	
-#if 0
-	debug(LOG_ERR, "%s : Creation of thread_crond check wifi station !",__FUNCTION__);
-	ret = pthread_create(&tid_wificrond, NULL, (void *)thread_wificrond, NULL);
-	if (ret != 0) {
-	    printf("FATAL: Failed to create a new thread (wificrond) - exiting");
-		exit(1);
-	}
-#else
 	dms_process_wifista();
-#endif
 
-	
-#if 0
-	debug(LOG_ERR, "%s : Creation of thread_crond check zigbee station !",__FUNCTION__);
-	ret = pthread_create(&tid_zigbeecrond, NULL, (void *)thread_zigbeecrond, NULL);
-	if (ret != 0) {
-	    printf("FATAL: Failed to create a new thread (zigbeecrond) - exiting");
-		exit(1);
-	}
-#else
 	dms_process_zigbee();
-#endif
+
 
 
 #if 1
