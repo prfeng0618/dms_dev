@@ -67,7 +67,7 @@ static int add_wifista_table(unsigned char *wmac)
 	struct wifista_record *witem;
 	
 	witem = (struct wifista_record *)malloc(sizeof(struct wifista_record));
-	strncpy((char *)witem->wmac, (char *)wmac, ETH_ALEN);;
+	memcpy(witem->wmac, wmac, ETH_ALEN);;
 	witem->mark = 1;
 	witem->wifistate = ONLINE;
 	list_add_tail(&witem->list, &head_wifista);

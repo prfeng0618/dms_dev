@@ -253,7 +253,40 @@ void auth_thread(void *data)
 		perror("connect to server failed!");
 		close(connect_fd);
 		//unlink(G.dmspath);
-		exit(1);
+		if ( strncmp(proto->subtype, "online", strlen("online")) == 0 ) {
+			if ( strncmp( proto->module, MODULE_WIFI, strlen(MODULE_WIFI)) == 0 ) {
+				sprintf(auth_mac,"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",proto->info[0],proto->info[1],proto->info[2],proto->info[3],
+						proto->info[4],proto->info[5],proto->info[6],proto->info[7],proto->info[8],proto->info[9],
+						proto->info[10],proto->info[11]);
+				debug(LOG_ERR, "%s : [%s] recv auth mesagee time out, default deal_illegality",__FUNCTION__,auth_mac);
+				deal_illegality(auth_mac);
+						
+			} else if ( strncmp( proto->module, MODULE_ZIGBEE, strlen(MODULE_ZIGBEE)) == 0 ) {
+				debug(LOG_ERR, "%s : [%s] recv auth mesagee time out, default deal_zigbee_illegality",__FUNCTION__,proto->info);
+				deal_zigbee_illegality(proto->info);
+				
+			} else {
+				debug(LOG_ERR, "%s : Can't find module(%s)!",__FUNCTION__,proto->module);
+			}
+		} 
+		else if ( strncmp(proto->subtype, "offline", strlen("offline")) == 0 ) {
+			if ( strncmp( proto->module, MODULE_WIFI, strlen(MODULE_WIFI)) == 0 ) {
+				sprintf(auth_mac,"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",proto->info[0],proto->info[1],proto->info[2],proto->info[3],
+						proto->info[4],proto->info[5],proto->info[6],proto->info[7],proto->info[8],proto->info[9],
+						proto->info[10],proto->info[11]);
+				deal_offline(auth_mac);
+			}
+			else if ( strncmp( proto->module, MODULE_ZIGBEE, strlen(MODULE_ZIGBEE)) == 0 ) {
+				debug(LOG_ERR, "%s : Nothing!",__FUNCTION__);
+			} 
+			else {
+				debug(LOG_ERR, "%s : Can't find module(%s)!",__FUNCTION__,proto->module);
+			}
+		} 
+		else {
+			debug(LOG_ERR, "%s : Nothing!",__FUNCTION__);
+		}
+		goto exit;
 	}
 	
 	memset(snd_buf, '\0', 1024);
