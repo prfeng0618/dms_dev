@@ -177,7 +177,7 @@ void deal_zigbee_legality(char *zigbee_id)
 	return;
 }
 
-
+#if 0
 void deal_zigbee_illegality(char *zigbee_id)
 {	
 	char sHigh[16] = {0};
@@ -195,23 +195,53 @@ void deal_zigbee_illegality(char *zigbee_id)
 	free(response);
 	return;
 }
+#else
+void deal_zigbee_illegality(char *zigbee_id)
+{	
+	zigbee_turnoff(zigbee_id);
+	return;
+}
+
+#endif
 
 
 void zigbee_turnon(char *zigbee_id)
 {
 	char sHigh[16] = {0};
 	char sLow[16] = {0};
-	char strBuf[256] = {0};
-	char *response;
+	int turnOffCount = 0;
 	
 	debug(LOG_ERR, "%s : [ %s ].... ",__FUNCTION__,zigbee_id);
 	
 	sscanf(zigbee_id, "%[^+]+%s",sHigh, sLow);	
-	sprintf(strBuf,"\{\"cmd_url\":\"/zigbeeservice/light\", \"cmd_name\":\"switch\", \"set\":1, \"node\":[%s, %s], \"on\":1\}", sHigh, sLow);
-	debug(LOG_ERR, "%s : send zigbee message : %s",__FUNCTION__,strBuf);
-	response = requestHandler(strBuf);
-	//cJSON *pJson = cJSON_Parse(response);
-	free(response);
+
+	for(turnOffCount = 0;turnOffCount < 5;turnOffCount++){
+		char strBuf[256] = {0};
+		char *response;
+		cJSON * pLevel = NULL;
+		char *pStrResult;
+		int iResult;
+		
+		sprintf(strBuf,"\{\"cmd_url\":\"/zigbeeservice/light\", \"cmd_name\":\"switch\", \"set\":1, \"node\":[%s, %s], \"on\":1\}", sHigh, sLow);
+		debug(LOG_ERR, "%s : send zigbee message : %s",__FUNCTION__,strBuf);
+
+		response = requestHandler(strBuf);
+		pLevel = cJSON_Parse(response);
+		free(response);
+		
+		cJSON *pRet = cJSON_GetObjectItem(pLevel, "result");
+		pStrResult = cJSON_Print(pRet);
+		sscanf(pStrResult,"%d",&iResult);
+		
+		free(pStrResult);
+		cJSON_Delete(pLevel);
+
+		if(0 == iResult)
+			break;
+
+		sleep(3);
+			
+	}
 	return;
 }
 
@@ -219,16 +249,38 @@ void zigbee_turnoff(char *zigbee_id)
 {
 	char sHigh[16] = {0};
 	char sLow[16] = {0};
-	char strBuf[256] = {0};
-	char *response;
+	int turnOffCount = 0;
 	
 	debug(LOG_ERR, "%s : [ %s ].... ",__FUNCTION__,zigbee_id);
-
 	sscanf(zigbee_id, "%[^+]+%s",sHigh, sLow);	
-	sprintf(strBuf,"\{\"cmd_url\":\"/zigbeeservice/light\", \"cmd_name\":\"switch\", \"set\":1, \"node\":[%s, %s], \"on\":0\}", sHigh, sLow);
-	response = requestHandler(strBuf);
-	//cJSON *pJson = cJSON_Parse(response);
-	free(response);
+
+	for(turnOffCount = 0;turnOffCount < 5;turnOffCount++){
+		char strBuf[256] = {0};
+		char *response;
+		cJSON * pLevel = NULL;
+		char *pStrResult;
+		int iResult;
+		
+		sprintf(strBuf,"\{\"cmd_url\":\"/zigbeeservice/light\", \"cmd_name\":\"switch\", \"set\":1, \"node\":[%s, %s], \"on\":0\}", sHigh, sLow);
+		debug(LOG_ERR, "%s : send zigbee message : %s",__FUNCTION__,strBuf);
+
+		response = requestHandler(strBuf);
+		pLevel = cJSON_Parse(response);
+		free(response);
+		
+		cJSON *pRet = cJSON_GetObjectItem(pLevel, "result");
+		pStrResult = cJSON_Print(pRet);
+		sscanf(pStrResult,"%d",&iResult);
+		
+		free(pStrResult);
+		cJSON_Delete(pLevel);
+
+		if(0 == iResult)
+			break;
+
+		sleep(3);
+			
+	}
 	return;
 }
 

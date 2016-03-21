@@ -11,7 +11,7 @@
 #define DEFAULT_DEBUGLEVEL LOG_INFO
 #define DEFAULT_LOG_SYSLOG 0
 #define DEFAULT_WIFISTA_CRONDTIME 5
-#define DEFAULT_ZIGBEESTA_CRONDTIME 60
+#define DEFAULT_ZIGBEESTA_CRONDTIME 10
 #define DEFAULT_WIFISTA_RCV_TIMEOUT 20
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
 
@@ -711,7 +711,7 @@ void thread_controlcrond(void *arg)
 						} 
 						else if ( strncmp(auth_op,"unregister",strlen("unregister")) == 0 ) {
 							zigbee_turnoff(auth_mac);
-							deal_zigbee_illegality(auth_mac);
+							//deal_zigbee_illegality(auth_mac);
 							sprintf(snd_buf,"type=command;module=zigbee;info=%s;result=ok",auth_mac);
 						} 
 						else {
