@@ -376,6 +376,17 @@ static int check_zigbeesta_status()
 			free(pStrLevel);
 			cJSON_Delete(pLevel);
 
+			if ((iLevel == 0 || iLevel == 3) && ZIG_COMING == pos_item->zigbeestate) {
+				char zigbee_id[32];
+				
+				pos_item->zigbeestate= ZIG_LEAVE;
+				//sprintf(zigbee_id,"%s+%s",sHigh,sLow);
+				//debug(LOG_ERR, "%s : [ %s ] Turn off light ...",__FUNCTION__,zigbee_id);
+				//zigbee_turnoff(zigbee_id);
+				pos_item->mark = 0;
+
+			}
+			
 			if ((iLevel == 0 || iLevel == 3) && ZIG_ONLINE == pos_item->zigbeestate) {
 				char zigbee_id[32];
 				
@@ -385,12 +396,13 @@ static int check_zigbeesta_status()
 				sprintf(zigbee_id,"%s+%s",sHigh,sLow);
 				debug(LOG_ERR, "%s : [ %s ] Turn off light ...",__FUNCTION__,zigbee_id);
 				zigbee_turnoff(zigbee_id);
+				pos_item->mark = 0;
 
 			}
 			
 			if ( 2 == iLevel && (ZIG_COMING == pos_item->zigbeestate|| ZIG_OFFLINE== pos_item->zigbeestate)) {
 				send_zigbeesta_onlinemsg(sHigh,sLow);
-				//pos_item->wifistate = ZIG_ONLINE;
+				pos_item->zigbeestate= ZIG_ONLINE;
 			}
 
 			/*
