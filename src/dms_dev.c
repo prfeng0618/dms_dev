@@ -34,7 +34,17 @@ pthread_mutex_t zigbeesta_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define BACKLOG 5     // how many pending connections queue will hold
 #define BUF_SIZE 1024
 
-static int init_resource(){	
+
+/*  系统完成拨号上网之后，会清理的iptables规则，发送信号usr1给dms_dev */
+int RESTORE_WIFI_FIRWALL = 0;
+
+static void sigusr1_handle(void)
+{
+	RESTORE_WIFI_FIRWALL = 1;
+}
+
+static int init_resource()
+{	
 	G.cmdkey = INVALID;
 	G.dmspath = strdup(DMS_UNIX_DOMAIN);
 	G.serverpath = strdup(SERVER_UNIX_DOMAIN);
@@ -55,6 +65,7 @@ static void init_signals(void)
 {
 	//signal(SIGINT, unregister_heartbeatserver);
 	//signal(SIGTERM, unregister_heartbeatserver);
+	signal(SIGUSR1, sigusr1_handle);
 	return;
 }
 
@@ -686,7 +697,8 @@ void thread_controlcrond(void *arg)
 							}
 						} 
 						else if ( strncmp(auth_op,"unregister",strlen("unregister")) == 0 ) {						
-							deal_offline(iptables_mac);
+							deal_illegality(iptables_mac);
+							//deal_offline(iptables_mac);
 							sprintf(snd_buf,"type=command;module=wifi;info=%s;result=ok",auth_mac);	
 						}
 						else {

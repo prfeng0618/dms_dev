@@ -3,6 +3,8 @@
 extern pthread_mutex_t wifista_table_mutex;
 extern struct globals G;
 extern struct list_head head_wifista;
+extern int RESTORE_WIFI_FIRWALL;
+
 
 static void dump_wifista()
 {
@@ -38,6 +40,38 @@ static void dump_wifista()
 	pthread_mutex_unlock(&wifista_table_mutex);
 	printf("dump wifista end \n");
 }
+
+static void restoreWifiFirwall(void)
+{
+	struct wifista_record *pos_item;
+	
+	struct auth_proto *ppro;
+	pthread_t pth_ids;
+	int ret;
+	
+	pthread_mutex_lock(&wifista_table_mutex);
+	printf("begin: receiv usr1 sig	\n");
+	list_for_each_entry(pos_item, &head_wifista, list) {
+		printf("	record : \n");
+		printf("	wmac[%02x:%02x:%02x:%02x:%02x:%02x] mark %d wifistate %d\n",
+				pos_item->wmac[0],pos_item->wmac[1],pos_item->wmac[2],
+				pos_item->wmac[3],pos_item->wmac[4],pos_item->wmac[5],
+				pos_item->mark,pos_item->wifistate);
+
+		ppro = alloc_auth_proto(TYPE_INFORM,SUBTYPE_ONLINE,MODULE_WIFI,pos_item->wmac);
+		ret=pthread_create(&pth_ids,NULL,(void *)auth_thread,(void *)ppro);
+		if(ret!=0)
+		{
+			printf ("Create pthread error!\n");
+			exit(1);
+		}
+		pthread_detach(pth_ids);
+	}
+	pthread_mutex_unlock(&wifista_table_mutex);
+	printf("end: receiv usr1 sig  \n");
+
+}
+
 
 static int get_wifista_info(RT_802_11_MAC_TABLE *ptable)
 {
@@ -152,6 +186,15 @@ int process_wifista()
 	struct wifista_record *pos_next_item;
 	//pthread_t pth_ids;
 	//struct auth_proto *ppro;
+
+
+	/* 完成拨号上网， 需要重置iptables规则和重新认证wifi下用户 */
+	if( RESTORE_WIFI_FIRWALL ) {
+		restoreWifiFirwall();
+		RESTORE_WIFI_FIRWALL = 0;
+	}
+
+	
 	
 	//获取客户端列表
 	if ( get_wifista_info(&table) < 0 ) {
