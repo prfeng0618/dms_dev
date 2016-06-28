@@ -9,6 +9,8 @@ extern pthread_mutex_t zigbeesta_table_mutex;
 
 extern struct globals G;
 
+extern int PAUSE_WIFI_AUTH;
+
 
 void dms_thread_wificrond(void *arg)
 {
@@ -17,7 +19,16 @@ void dms_thread_wificrond(void *arg)
 	struct	timespec timeout;
 	
 	while (1) {
-		process_wifista();
+
+		if(PAUSE_WIFI_AUTH == 1) {
+			debug(LOG_INFO, "%s : Pause wifi auth!",__FUNCTION__);
+			pause_wifiauth();
+			PAUSE_WIFI_AUTH = 2;
+		} else if(PAUSE_WIFI_AUTH == 2) {
+			debug(LOG_INFO, "%s : Have paused wifi auth!",__FUNCTION__);
+		} else {
+			process_wifista();
+		}		
 		/* Sleep for config.crondinterval seconds... */
 		timeout.tv_sec = time(NULL) + G.wifista_crondtime;
 		timeout.tv_nsec = 0;

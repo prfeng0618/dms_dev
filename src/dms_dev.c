@@ -38,9 +38,21 @@ pthread_mutex_t zigbeesta_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 /*  系统完成拨号上网之后，会清理的iptables规则，发送信号usr1给dms_dev */
 int RESTORE_WIFI_FIRWALL = 0;
 
+/* 0-开启认证(默认值) ，1-暂停认证，暂未清除规则 2-暂停认证，已清除规则 */
+int PAUSE_WIFI_AUTH = 0;
+
 static void sigusr1_handle(void)
 {
 	RESTORE_WIFI_FIRWALL = 1;
+}
+
+
+static void sigusr2_handle(void)
+{
+	if(PAUSE_WIFI_AUTH > 0)
+		PAUSE_WIFI_AUTH = 0;
+	else
+		PAUSE_WIFI_AUTH = 1;
 }
 
 static int init_resource()
@@ -66,6 +78,7 @@ static void init_signals(void)
 	//signal(SIGINT, unregister_heartbeatserver);
 	//signal(SIGTERM, unregister_heartbeatserver);
 	signal(SIGUSR1, sigusr1_handle);
+	signal(SIGUSR2, sigusr2_handle);
 	return;
 }
 

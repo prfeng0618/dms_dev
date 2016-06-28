@@ -3,8 +3,7 @@
 extern pthread_mutex_t wifista_table_mutex;
 extern struct globals G;
 extern struct list_head head_wifista;
-extern int RESTORE_WIFI_FIRWALL;
-
+extern int RESTORE_WIFI_FIRWALL; 
 
 static void dump_wifista()
 {
@@ -176,6 +175,28 @@ void deal_offline(char *auth_mac)
 	return;
 }
 
+int pause_wifiauth()
+{
+	struct wifista_record *pos_item;
+	struct wifista_record *pos_next_item;
+	char auth_mac[32] = {0};
+
+	pthread_mutex_lock(&wifista_table_mutex);
+	/* 删除客户端列表的用户 */
+	list_for_each_entry_safe(pos_item, pos_next_item, &head_wifista, list) {	 
+		/* 清理iptables的规则 */
+		sprintf(auth_mac,"%02x:%02x:%02x:%02x:%02x:%02x",
+			pos_item->wmac[0], pos_item->wmac[1],
+			pos_item->wmac[2], pos_item->wmac[3],
+			pos_item->wmac[4], pos_item->wmac[5]);
+		deal_offline(auth_mac);;
+		
+		/* 从列表中删除*/
+		del_wifista_table(pos_item); 
+	}
+	pthread_mutex_unlock(&wifista_table_mutex);
+
+}
 
 int process_wifista()
 {
